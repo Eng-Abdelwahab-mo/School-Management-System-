@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// RegisterInput يمثل هيكل البيانات القادمة من الواجهة الأمامية عند التسجيل
 type RegisterInput struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -20,6 +21,7 @@ type RegisterInput struct {
 	Email    string `json:"email" binding:"required,email"`
 }
 
+// LoginInput يمثل هيكل البيانات القادمة من الواجهة الأمامية عند تسجيل الدخول
 type LoginInput struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -38,9 +40,10 @@ func GenerateJWT(userID uint, role string) (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-// Register a new student
+// Register تقوم بإنشاء حساب طالب جديد
 func Register(c *gin.Context) {
 	var input RegisterInput
+	// 1. استلام البيانات من طلب الـ HTTP (JSON) وتحويلها للهيكل المبرمج
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -53,7 +56,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Hash the password
+	// 3. تشفير كلمة المرور (Hashing + Salting) باستخدام bcrypt لضمان الأمان
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
@@ -134,11 +137,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// 4. توليد توكن JWT يحتوي على هوية المستخدم ودوره
 	token, err := GenerateJWT(user.ID, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
+	// 5. إرسال التوكن والدور كاستجابة للواجهة الأمامية
 	c.JSON(http.StatusOK, gin.H{"token": token, "role": user.Role})
 }

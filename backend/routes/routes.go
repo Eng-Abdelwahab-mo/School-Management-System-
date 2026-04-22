@@ -17,22 +17,22 @@ func SetupRouter() *gin.Engine {
 		api.POST("/register-admin", controllers.BootstrapAdmin)
 		api.POST("/login", controllers.Login)
 
-		// Student Routes (Protected, accessible to students)
+		// مسارات الطالب (محمية - تتطلب تسجيل دخول ودور "طالب")
 		student := api.Group("/student")
-		student.Use(middlewares.AuthMiddleware())
-		student.Use(middlewares.RoleMiddleware("student"))
+		student.Use(middlewares.AuthMiddleware()) // التحقق من التوكن
+		student.Use(middlewares.RoleMiddleware("student")) // التحقق من الدور
 		{
-			student.GET("/profile", controllers.ViewProfile)
+			student.GET("/profile", controllers.ViewProfile) // جلب بيانات الملف الشخصي
 		}
 
-		// Admin Routes (Protected, accessible only to admins)
+		// مسارات المسؤول (محمية - تتطلب تسجيل دخول ودور "أدمن")
 		admin := api.Group("/admin")
 		admin.Use(middlewares.AuthMiddleware())
 		admin.Use(middlewares.RoleMiddleware("admin"))
 		{
-			admin.GET("/students", controllers.ListStudents)
-			admin.PUT("/students/:id", controllers.UpdateStudent)
-			admin.DELETE("/students/:id", controllers.DeleteStudent)
+			admin.GET("/students", controllers.ListStudents) // عرض قائمة الطلاب
+			admin.PUT("/students/:id", controllers.UpdateStudent) // تحديث بيانات طالب
+			admin.DELETE("/students/:id", controllers.DeleteStudent) // حذف طالب
 		}
 	}
 

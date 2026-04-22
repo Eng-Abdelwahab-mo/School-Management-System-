@@ -10,13 +10,14 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// AuthMiddleware ensures the request has a valid JWT token
+// AuthMiddleware يضمن أن الطلب يحتوي على توكن JWT صالح
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 1. استخراج التوكن من ترويسة Authorization (Header)
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
-			c.Abort()
+			c.Abort() // إيقاف الطلب وعدم إكماله للمسار المطلوب
 			return
 		}
 
@@ -50,17 +51,18 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Store user details in context for later use
+		// 3. تخزين بيانات المستخدم (المعرف والدور) في سياق الطلب (Context) لاستخدامها لاحقاً في الـ Controllers
 		c.Set("user_id", uint(claims["user_id"].(float64)))
 		c.Set("role", claims["role"].(string))
 
-		c.Next()
+		c.Next() // السماح للطلب بالانتقال للخطوة التالية (مثل Controller)
 	}
 }
 
-// RoleMiddleware restricts access to certain roles
+// RoleMiddleware يقيد الوصول بناءً على دور المستخدم (مثلاً طالب أو أدمن)
 func RoleMiddleware(requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 1. جلب الدور الذي تم تخزينه في الـ Context بواسطة الـ AuthMiddleware
 		role, exists := c.Get("role")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Role not found in token"})
@@ -68,6 +70,7 @@ func RoleMiddleware(requiredRole string) gin.HandlerFunc {
 			return
 		}
 
+		// 2. التحقق مما إذا كان دور المستخدم يطابق الدور المطلوب للمسار
 		if role.(string) != requiredRole {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied, insufficient permissions"})
 			c.Abort()

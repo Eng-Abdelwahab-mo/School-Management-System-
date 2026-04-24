@@ -127,7 +127,8 @@ func Login(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := database.DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
+	// البحث عن المستخدم باستخدام اسم المستخدم أو البريد الإلكتروني
+	if err := database.DB.Where("username = ? OR email = ?", input.Username, input.Username).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}

@@ -20,7 +20,10 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   // 4. معالجة الأخطاء إذا كانت الاستجابة غير ناجحة
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    // نمرر كود الحالة (Status) مع الرسالة لنتعامل معها في الواجهة
+    const error = new Error(errorData.error || `HTTP error! status: ${response.status}`) as any;
+    error.status = response.status;
+    throw error;
   }
 
   // 5. إرجاع البيانات المحولة إلى JSON للجهة التي استدعت الدالة
@@ -34,4 +37,27 @@ export const authApi = {
 
 export const studentApi = {
   getProfile: () => apiFetch('/student/profile'),
+  getGrades: () => apiFetch('/student/subjects'),
+};
+
+export const adminApi = {
+  getStudents: () => apiFetch('/admin/students'),
+  updateStudent: (id: number, data: any) => apiFetch(`/admin/students/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteStudent: (id: number) => apiFetch(`/admin/students/${id}`, { method: 'DELETE' }),
+  
+  // Subjects
+  getSubjects: () => apiFetch('/admin/subjects'),
+  createSubject: (data: any) => apiFetch('/admin/subjects', { method: 'POST', body: JSON.stringify(data) }),
+  updateSubject: (id: number, data: any) => apiFetch(`/admin/subjects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteSubject: (id: number) => apiFetch(`/admin/subjects/${id}`, { method: 'DELETE' }),
+  
+  // Student-Subject Assignment
+  assignSubject: (data: any) => apiFetch('/admin/students/subjects', { method: 'POST', body: JSON.stringify(data) }),
+  removeSubject: (studentId: number, subjectId: number) => apiFetch(`/admin/students/${studentId}/subjects/${subjectId}`, { method: 'DELETE' }),
+  getStudentSubjects: (studentId: number) => apiFetch(`/admin/students/${studentId}/subjects`),
+  
+  // Grades
+  getAllGrades: () => apiFetch('/admin/grades'),
+  getStudentGrades: (studentId: number) => apiFetch(`/admin/students/${studentId}/grades`),
+  updateGrade: (studentId: number, subjectId: number, data: any) => apiFetch(`/admin/students/${studentId}/grades/${subjectId}`, { method: 'PUT', body: JSON.stringify(data) }),
 };

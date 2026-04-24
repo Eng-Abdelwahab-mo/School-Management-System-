@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GraduationCap, User, Lock, Loader2, CheckCircle2 } from "lucide-react";
 import { authApi } from "@/lib/api";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -33,13 +33,17 @@ export default function LoginPage() {
     try {
       // 1. إرسال بيانات النموذج (username, password) إلى الخلفية عبر الـ API
       const data = await authApi.login(formData);
-      
+
       // 2. في حال النجاح، تخزين التوكن والدور في الـ localStorage لاستخدامهما لاحقاً
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
-      
-      // 3. توجيه المستخدم إلى صفحة الملف الشخصي
-      router.push("/profile");
+
+      // 3. توجيه المستخدم حسب الدور
+      if (data.role === "admin") {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/profile");
+      }
     } catch (err: any) {
       setError(err.message || "Invalid username or password");
     } finally {
@@ -74,14 +78,14 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Username</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Username or Email</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
                   type="text"
                   required
                   className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-                  placeholder="johndoe123"
+                  placeholder="jone or jone@example.com"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 />
@@ -121,5 +125,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
